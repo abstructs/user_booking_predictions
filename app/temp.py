@@ -2,10 +2,12 @@ import csv
 import numpy as np
 import tensorflow as tf
 import os
-# class model:
-#     X
-#     def __init__(self):
-#         load_data()
+
+# data_labels = {
+#     countries: {
+#         'US': 1
+#     }
+# }
 
 cur_path = os.path.dirname(__file__)
 
@@ -22,6 +24,19 @@ def get_countries():
             arr.append(row[0])
         return arr[1:]
 
+# def categories_to_classes(categories):
+#     """
+#     EFFECTS: Takes a list of categories and maps the category name to
+#              a number that represents that category
+#     """
+
+
+#     for i in range(categories):
+#         categories[i]
+
+#         Y[indicies] = i
+
+
 def classify_data(Y, countries):
     """
     EFFECTS: takes a Y vector of countries and an array of countries
@@ -33,11 +48,14 @@ def classify_data(Y, countries):
     
     # classify where the user booked their location
     classification_count = len(countries)
+
+    # category_map = categories_to_classes(countries)
     
     for i in range(classification_count):
         indicies = np.where(Y == countries[i])
 
         Y[indicies] = i
+    
         # print(np.where(Y == country))
 
     # special cases
@@ -62,6 +80,8 @@ def load_params(row):
     EFFECTS: Takes a row of data and loads the parameters into an 
              array of size (training_example_count, param_count)
     """
+    
+    print(row)
 
     return row[5]
 
@@ -87,7 +107,6 @@ def load_data(training_example_count=100, file_path=cur_path + "/data/train_user
             
             if i == training_example_count:
                 break
-            load_params(row[:-1])
             X.append(load_params(row))
             Y.append(row[-1])
 
@@ -115,23 +134,6 @@ def predict(W, X, classification_count):
     predictions = tf.argmax(p_x, 1)
 
     return tf.cast(tf.one_hot(predictions, classification_count), tf.float64)
-    # print(p_x)
-    # print(W.shape)
-
-    # print(p_x)
-    # return p_x
-    
-
-    # print(predictions)
-
-    # return predictions
-
-
-    # print(predictions)
-    # print(tf.Session().run(p_x))
-
-    # return tf.cast((predictions > threshold), np.float64)
-    # return X
 
 def save_weights(W):
     str = ""
