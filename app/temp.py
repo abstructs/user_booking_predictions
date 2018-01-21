@@ -128,12 +128,10 @@ class DataLoader:
 
             # read X and Y values from training data set
 
-            
             file_contents = list(reader)
             for i in range(training_example_range[0] + 1, training_example_range[1] + 2):
                 X.append(self.load_params(file_contents[i]))
                 Y.append(file_contents[i][-1])
-
         
         # strip labels and verify vector shapes with reshape
         X = np.array(X[1:])
@@ -166,15 +164,17 @@ class Model:
         self.init = tf.global_variables_initializer()
 
     def train(self, num_iterations=100):
-        print(self.x_train.shape)
-        # with tf.Session() as sess:
-        #     sess.run(self.init)
-        #     for i in range(0, num_iterations):
-        #         [c,w,_] = sess.run([self.cost_function, self.parameters["W"], self.optimizer], feed_dict={"X:0": self.x_train, "Y:0": self.y_train})
-        #         if i % 1000 == 0:
-        #             print("Cost after " + str(i) + " iterations: " + str(c))
+        """
+        EFFECTS: minimizes the cost function and saves the weights
+        """
+        with tf.Session() as sess:
+            sess.run(self.init)
+            for i in range(0, num_iterations):
+                [c,w,_] = sess.run([self.cost_function, self.parameters["W"], self.optimizer], feed_dict={"X:0": self.x_train, "Y:0": self.y_train})
+                if i % 1000 == 0:
+                    print("Cost after " + str(i) + " iterations: " + str(c))
             
-        #     self.DataLoader.save_weights(w)
+            self.DataLoader.save_weights(w)
         #     w = self.DataLoader.load_weights()
 
             # train_acc = sess.run(temp.get_accuracy(w, X, Y, classification_count))
@@ -192,7 +192,7 @@ class Model:
         return tf.add(tf.matmul(placeholder_x, tf.transpose(self.parameters["W"])), self.parameters["b"])
 
     def get_optimizer(self):
-        return tf.train.AdamOptimizer(0.01).minimize(self.get_cost())
+        return tf.train.AdamOptimizer(0.01).minimize(self.cost_function)
 
     def predict(W, X, classification_count):
         """

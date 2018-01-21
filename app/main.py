@@ -8,7 +8,7 @@ import os
 
 Model = temp.Model()
 
-Model.train()
+Model.train(10000)
 
 # [X, Y, classification_count] = temp.load_data(5)
 
