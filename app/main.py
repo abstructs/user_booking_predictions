@@ -4,9 +4,13 @@ import tensorflow as tf
 import temp
 import os
 
-cur_path = os.path.dirname(__file__)
+# DataLoader = temp.DataLoader()
 
-[X, Y, classification_count] = temp.load_data(5)
+Model = temp.Model()
+
+Model.train()
+
+# [X, Y, classification_count] = temp.load_data(5)
 
 # x_train = tf.placeholder(dtype=tf.float32, shape=X.shape, name="X")
 # y_train = tf.placeholder(dtype=tf.float32, shape=Y.shape, name="Y")
