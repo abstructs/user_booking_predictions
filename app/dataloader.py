@@ -3,14 +3,7 @@ import numpy as np
 import tensorflow as tf
 import os
 
-# data_labels = {
-#     countries: {
-#         'US': 1
-#     }
-# }
-
 # manages loading the data into vectors X and Y
-
 class DataLoader:
     def __init__(self, cur_path=os.path.dirname(__file__)):
         self.cur_path = cur_path
@@ -145,88 +138,3 @@ class DataLoader:
         [one_hot_matrix, classification_count] = self.classify_data(Y)
 
         return (X, tf.Session().run(one_hot_matrix), classification_count)
-
-
-class Model:
-    def __init__(self):
-        self.DataLoader = DataLoader()
-        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.load_data("data/train_users_2.csv", (0,100))
-        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (100,200))
-        
-        self.parameters = {
-            "W": tf.get_variable("W", shape=[self.classification_count, self.x_train.shape[1]], initializer=tf.contrib.layers.xavier_initializer(dtype=tf.float64)), 
-            "b": tf.Variable(tf.zeros((1, 1)))
-        }
-
-        self.cost_function = self.get_cost()
-        self.optimizer = self.get_optimizer()
-
-        self.init = tf.global_variables_initializer()
-
-    def train(self, num_iterations=100):
-        """
-        EFFECTS: minimizes the cost function and saves the weights
-        """
-        with tf.Session() as sess:
-            sess.run(self.init)
-            for i in range(0, num_iterations):
-                [c,w,_] = sess.run([self.cost_function, self.parameters["W"], self.optimizer], feed_dict={"X:0": self.x_train, "Y:0": self.y_train})
-                if i % 1000 == 0:
-                    print("Cost after " + str(i) + " iterations: " + str(c))
-            
-            self.DataLoader.save_weights(w)
-        #     w = self.DataLoader.load_weights()
-
-            # train_acc = sess.run(temp.get_accuracy(w, X, Y, classification_count))
-            # test_acc = sess.run(temp.get_accuracy(w, x_test, y_test, classification_count))
-
-            # print("Training accuracy: %.2f" % train_acc)
-            # print("Testing accuracy: %.2f" % test_acc)
-    
-    def get_cost(self):        
-        placeholder_y = tf.placeholder(dtype=tf.float32, shape=self.y_train.shape, name="Y")
-        return tf.losses.softmax_cross_entropy(onehot_labels=placeholder_y, logits=self.get_activation())
-
-    def get_activation(self):
-        placeholder_x = tf.placeholder(dtype=tf.float32, shape=self.x_train.shape, name="X")
-        return tf.add(tf.matmul(placeholder_x, tf.transpose(self.parameters["W"])), self.parameters["b"])
-
-    def get_optimizer(self):
-        return tf.train.AdamOptimizer(0.01).minimize(self.cost_function)
-
-    def predict(W, X, classification_count):
-        """
-        EFFECTS: uses argmax to return the index corresponding to the country
-                the model predicts
-        """
-        p_x = tf.multiply(X, tf.transpose(W))
-
-        predictions = tf.argmax(p_x, 1)
-
-        return tf.cast(tf.one_hot(predictions, classification_count), tf.float64)
-
-
-    def get_accuracy(self, W, X, Y, classification_count):
-        """
-        EFFECTS: does a comparison on the predicted values and expected values
-                returns the correct predictions over the total number of predictions
-        """
-        Y = tf.cast(Y, dtype=tf.float64)
-        X = tf.cast(X, dtype=tf.float64)
-        predictions = predict(W, X, classification_count)
-
-        comparison = tf.equal(tf.argmax(predictions, 1), tf.Session().run(tf.argmax(Y, 1)))
-
-        # tf.equal(tf.arg_max(predictions), tf.arg_max(Y))
-
-        # print(tf.Session().run(predictions))
-
-        total_predictions = tf.size(predictions, out_type=tf.float64)
-        
-        correct_predictions = tf.reduce_sum(tf.cast(comparison, dtype=tf.float64))
-        
-        # print(correct_predictions)
-
-        training_accuracy = tf.divide(correct_predictions, total_predictions)
-
-        return training_accuracy
