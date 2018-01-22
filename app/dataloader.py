@@ -12,26 +12,11 @@ class DataLoader:
     def save_weights(self, sess):
         saver = tf.train.Saver()
         saver.save(sess, self.cur_path + "/data/my_model")
-        # str = ""
-        # f = open(self.cur_path + "/data/weights.txt", "w")
-        # for arr in W:
-        #     for i in arr:
-        #         str += "%f," % i
-        
-        # f.write(str)
-        # f.close()
 
     def load_weights(self, sess):
         saver = tf.train.Saver()
         saver.restore(sess, self.cur_path + "/data/my_model")
         return sess.run('W:0')
-        # f = open(self.cur_path + "/data/weights.txt", "r")
-        # file_contents = f.read()
-        
-        # np_arr = np.asarray(str.split(file_contents, ",")[:-1], dtype=np.float64)
-
-        # return np_arr.reshape((np_arr.shape[0], 1))
-
     
     def try_parse(self, num):
         """
@@ -87,68 +72,6 @@ class DataLoader:
 
         return params
 
-
-    # def categories_to_classes(self, categories):
-    #     """
-    #     EFFECTS: Takes a list of categories and maps the category name to
-    #             a number that represents that category
-    #     """
-
-    #     for i in range(categories):
-    #         # categories[i]
-
-    #         Y[indicies] = i
-
-    # def classify_data(self, Y):
-    #     """
-    #     EFFECTS: takes a Y vector of countries and an array of countries
-    #             and returns a one hot matrix with the data properly classified
-    #             the tuple is in form of (one_hot_matrix, classification_count)
-    #     """
-
-    #     countries = self.get_countries()
-        
-    #     # classify where the user booked their location
-    #     classification_count = len(countries)
-
-    #     # category_map = categories_to_classes(countries)
-        
-    #     for i in range(classification_count):
-    #         indicies = np.where(Y == countries[i])
-
-    #         Y[indicies] = i
-
-    #     # special cases
-    #     # NDF means user did not book a location
-    #     ndf_indicies = np.where(Y == 'NDF')
-    #     Y[ndf_indicies] = len(countries)
-    #     other_indicies = np.where(Y == 'other')
-    #     Y[other_indicies] = len(countries) + 1
-        
-    #     Y = Y.astype(int)
-        
-    #     # get one hot
-    #     tf.one_hot(Y, classification_count)
-
-    #     one_hot_matrix = tf.one_hot(tf.cast(Y, tf.int32), classification_count + 2)
-
-    #     one_hot_matrix = tf.reshape(one_hot_matrix, (tf.shape(Y)[0], 12))
-
-    #     return (one_hot_matrix, classification_count + 2)
-
-    # def get_countries(self):
-    #     """
-    #     EFFECTS: returns an array of country codes that are used in
-    #             the dataset.
-    #     """
-    #     with open(self.cur_path + "/data/countries.csv", "r") as csvfile:
-    #         arr = []
-            
-    #         reader = csv.reader(csvfile, quotechar='|')
-    #         for row in reader:
-    #             arr.append(row[0])
-    #         return arr[1:]
-
     def load_data(self, file_name, training_example_range=(0, 100)):
         """
         EFFECTS: loads the parameters X and target Y into two vectors
@@ -188,6 +111,9 @@ class DataLoader:
 
         X = np.array(X)
         X = X.astype(float)
+
+        print(X)
+
         
         Y = np.array(Y)
         Y = np.reshape(Y, (Y.shape[0], 1))
