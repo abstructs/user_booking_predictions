@@ -7,6 +7,7 @@ import os
 class DataLoader:
     def __init__(self, cur_path=os.path.dirname(__file__)):
         self.cur_path = cur_path
+        self.data_map = dict
 
     def save_weights(self, W):
         str = ""
@@ -14,7 +15,7 @@ class DataLoader:
         for arr in W:
             for i in arr:
                 str += "%f," % i
-        print(str)
+        
         f.write(str)
         f.close()
 
@@ -26,22 +27,74 @@ class DataLoader:
 
         return np_arr.reshape((np_arr.shape[0], 1))
 
-    def load_params(self, row):
+    def load_classes(self, labels, file_content):
+        """
+        EFFECTS: creates a dictionary with the appropriate values for
+                 each class in a file
+        """
+        map = {}
+        
+        # print(file_content)
+
+        # print(labels)
+
+        for label in labels:
+            map[label] = {}
+        
+        for row in file_content:
+            for i, val in enumerate(row):
+
+                # gets dict for label with the entry
+                map_for_label = map[labels[i]]
+                
+                if type(val) is str and not (val in map_for_label):
+                    try:
+                        map_for_label.update({val: max(map_for_label.values()) + 1})
+                    except ValueError:
+                        map_for_label.update({val: 1})
+
+        self.data_map = map
+
+    def load_params(self, labels, file_content):
         """
         EFFECTS: Takes a row of data and loads the parameters into an 
                 array of size (training_example_count, param_count)
         """
+        map = {}
         
-        # print(row)
+        # print(file_content)
 
-        return row[5]
+        # print(labels)
+
+        for label in labels:
+            map[label] = {}
+        
+        for row in file_content:
+            for i, val in enumerate(row):
+
+                # gets dict for label with the entry
+                map_for_label = map[labels[i]]
+                
+                if type(val) is str and not (val in map_for_label):
+                    try:
+                        map_for_label.update({val: max(map_for_label.values()) + 1})
+                    except ValueError:
+                        map_for_label.update({val: 1})
+
+                    
+        print("\n\n\n")
+        print(map)
+        print("\n\n\n")
+
+        exit
+
+        # return row[5]
 
     def categories_to_classes(self, categories):
         """
         EFFECTS: Takes a list of categories and maps the category name to
                 a number that represents that category
         """
-
 
         for i in range(categories):
             # categories[i]
@@ -66,8 +119,6 @@ class DataLoader:
             indicies = np.where(Y == countries[i])
 
             Y[indicies] = i
-        
-            # print(np.where(Y == country))
 
         # special cases
         # NDF means user did not book a location
@@ -77,7 +128,7 @@ class DataLoader:
         Y[other_indicies] = len(countries) + 1
         
         Y = Y.astype(int)
-        # print(Y)
+        
         # get one hot
         tf.one_hot(Y, classification_count)
 
@@ -122,8 +173,14 @@ class DataLoader:
             # read X and Y values from training data set
 
             file_contents = list(reader)
+            labels = file_contents[0]
+
+            # self.load_params(labels[4:], [row[4:] for row in file_contents[1:25]])
+
+            # return
+
             for i in range(training_example_range[0] + 1, training_example_range[1] + 2):
-                X.append(self.load_params(file_contents[i]))
+                X.append(self.load_params(labels, file_contents[i]))
                 Y.append(file_contents[i][-1])
         
         # strip labels and verify vector shapes with reshape

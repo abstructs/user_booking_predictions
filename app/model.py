@@ -8,8 +8,9 @@ import dataloader
 class Model:
     def __init__(self):
         self.DataLoader = dataloader.DataLoader()
-        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.load_data("data/train_users_2.csv", (0,100))
-        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (100,200))
+        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.load_data("data/train_users_2.csv", (0,1))
+        exit
+        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (25,50))
         
         self.parameters = {
             "W": tf.get_variable("W", shape=[self.classification_count, self.x_train.shape[1]], initializer=tf.contrib.layers.xavier_initializer(dtype=tf.float64)), 

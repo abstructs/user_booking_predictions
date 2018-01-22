@@ -8,7 +8,7 @@ Model = model.Model()
 
 # Model.train()
 
-Model.get_accuracy()
+# Model.load_data()
 
 print("Training accuracy: %.2f" % Model.get_accuracy("train"))
 print("Testing accuracy: %.2f" % Model.get_accuracy("test"))
