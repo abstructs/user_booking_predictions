@@ -6,16 +6,17 @@ import dataloader
 # manages interating with the model
 
 class Model:
-    def __init__(self):
+    def __init__(self):        
         self.DataLoader = dataloader.DataLoader()
-        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.load_data("data/train_users_2.csv", (0,1))
-        exit
-        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (25,50))
+        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.load_data("data/train_users_2.csv", (0,10000))
+        
+        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (10000,11000))
         
         self.parameters = {
             "W": tf.get_variable("W", shape=[self.classification_count, self.x_train.shape[1]], initializer=tf.contrib.layers.xavier_initializer(dtype=tf.float64)), 
             "b": tf.Variable(tf.zeros((1, 1)))
         }
+
 
         self.cost_function = self.get_cost()
         self.optimizer = self.get_optimizer()
@@ -33,10 +34,11 @@ class Model:
                 if i % 1000 == 0:
                     print("Cost after " + str(i) + " iterations: " + str(c))
             
-            self.DataLoader.save_weights(w)
+            self.DataLoader.save_weights(sess)
+            
     
-    def get_weights(self):
-        return self.DataLoader.load_weights()
+    def get_weights(self, sess):
+        return self.DataLoader.load_weights(sess    )
 
     def get_cost(self):        
         placeholder_y = tf.placeholder(dtype=tf.float32, shape=self.y_train.shape, name="Y")
@@ -47,14 +49,14 @@ class Model:
         return tf.add(tf.matmul(placeholder_x, tf.transpose(self.parameters["W"])), self.parameters["b"])
 
     def get_optimizer(self):
-        return tf.train.AdamOptimizer(0.01).minimize(self.cost_function)
+        return tf.train.AdamOptimizer(0.1).minimize(self.cost_function)
 
     def predict(self, W, X):
         """
         EFFECTS: uses argmax to return the index corresponding to the country
                  the model predicts
         """
-        p_x = tf.multiply(X, tf.transpose(W))
+        p_x = tf.matmul(X, tf.transpose(W))
 
         predictions = tf.argmax(p_x, 1)
 
@@ -67,7 +69,7 @@ class Model:
                 returns the correct predictions over the total number of predictions
         """
 
-        W = self.get_weights()
+        W = tf.cast(self.get_weights(tf.Session()), dtype=tf.float64)
 
         if distribution == "test":
             Y = self.y_test
@@ -89,5 +91,6 @@ class Model:
         correct_predictions = tf.reduce_sum(tf.cast(comparison, dtype=tf.float64))
 
         training_accuracy = tf.divide(correct_predictions, total_predictions)
-    
+
+
         return tf.Session().run(training_accuracy)

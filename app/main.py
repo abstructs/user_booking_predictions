@@ -6,7 +6,7 @@ import os
 
 Model = model.Model()
 
-# Model.train()
+Model.train(20000)
 
 # Model.load_data()
 
