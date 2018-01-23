@@ -16,7 +16,7 @@ class DataLoader:
     def load_weights(self, sess):
         saver = tf.train.Saver()
         saver.restore(sess, self.cur_path + "/data/my_model")
-        return sess.run(['W:0', 'b:0'])
+        return sess.run('W:0')
     
     def try_parse(self, num):
         """
@@ -117,7 +117,7 @@ class DataLoader:
         
         Y = np.array(Y)
         Y = np.reshape(Y, (Y.shape[0], 1))
-        Y = Y.astype(float)
+        Y = Y.astype(np.float64)
 
         # the number of classes we have
         classification_count = np.max(Y)
