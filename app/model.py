@@ -3,27 +3,27 @@ import tensorflow as tf
 import os
 import dataloader
 
+
 # manages interating with the model
 
 class Model:
-    def __init__(self):        
+    def __init__(self):
         self.DataLoader = dataloader.DataLoader()
-        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.load_data("data/train_users_2.csv", (0,10000))
-        
-        
+        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.load_data("data/train_users_2.csv", (0, 10000))
+
+        # self.DataLoader.load_data("data/countries.csv")
         # self.x_train = [[param ** i for i, param in enumerate(row)] for row in self.x_train]
-            
-        
+
         # self.x_train = np.array([param in enumerate(self.x_train)])
 
         self.x_train = tf.Session().run(tf.nn.l2_normalize(self.x_train, 0))
 
-        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (10000, 11000))
-        
+        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (10000, 20000))
+
         self.parameters = {
-            "W": tf.get_variable("W", shape=[self.classification_count, self.x_train.shape[1]], 
-            initializer=tf.contrib.layers.xavier_initializer(dtype=tf.float64), 
-            dtype=tf.float64, regularizer=self.get_regularizer()), 
+            "W": tf.get_variable("W", shape=[self.classification_count, self.x_train.shape[1]],
+                                 initializer=tf.contrib.layers.xavier_initializer(dtype=tf.float64),
+                                 dtype=tf.float64, regularizer=self.get_regularizer()),
             "b": tf.ones((1, 1), dtype=tf.float64)
         }
 
@@ -39,27 +39,27 @@ class Model:
         with tf.Session() as sess:
             sess.run(self.init)
             for i in range(0, num_iterations):
-                [c,w,_] = sess.run([self.cost_function, self.parameters["W"], self.optimizer], feed_dict={"X:0": self.x_train, "Y:0": self.y_train})
+                [c, w, _] = sess.run([self.cost_function, self.parameters["W"], self.optimizer],
+                                     feed_dict={"X:0": self.x_train, "Y:0": self.y_train})
                 if i % 1000 == 0:
                     print("Cost after " + str(i) + " iterations: " + str(c))
-            
+
             self.DataLoader.save_weights(sess)
-            
-    
+
     def get_weights(self, sess):
         return self.DataLoader.load_weights(sess)
 
     def get_regularizer(self):
         return tf.contrib.layers.l2_regularizer(0.8)
 
-    def get_cost(self):        
+    def get_cost(self):
         placeholder_y = tf.placeholder(dtype=tf.float64, shape=self.y_train.shape, name="Y")
         return tf.losses.softmax_cross_entropy(onehot_labels=placeholder_y, logits=self.get_activation())
         # return tf.losses.sigmoid_cross_entropy(multi_class_labels=placeholder_y, logits=self.get_activation())
 
     def get_activation(self):
         placeholder_x = tf.placeholder(dtype=tf.float64, shape=self.x_train.shape, name="X")
-        
+
         return tf.add(tf.matmul(placeholder_x, tf.transpose(self.parameters["W"])), self.parameters["b"])
 
     def get_optimizer(self):
@@ -75,11 +75,10 @@ class Model:
 
         predictions = tf.argmax(p_x, 1)
 
-
         return tf.Session().run(predictions)
 
         # return tf.cast(tf.one_hot(predictions, self.classification_count), tf.float64)
-        
+
         # print(tf.Session().run(p_x))
 
         # return tf.argmax(p_x, 1)
@@ -107,7 +106,6 @@ class Model:
 
         # predictions = tf.argmax(predictions, 1)
         Y = tf.argmax(Y, 1)
-        
 
         with tf.Session() as sess:
             Y = sess.run(Y)
@@ -117,11 +115,9 @@ class Model:
             equals = sess.run(tf.equal(Y, predictions))
             set_size = sess.run(tf.size(Y))
             return np.count_nonzero(equals) / set_size
-            
 
             # return sess.run(acc)[0]
 
- 
         # print(Y)
 
         # with tf.Session() as sess:
@@ -131,10 +127,9 @@ class Model:
         # comparison = tf.equal(tf.argmax(predictions, 1), tf.Session().run(tf.argmax(Y, 1)))
 
         # total_predictions = tf.size(predictions, out_type=tf.float64)
-        
+
         # correct_predictions = tf.reduce_sum(tf.cast(comparison, dtype=tf.float64))
 
         # training_accuracy = tf.divide(correct_predictions, total_predictions)
-
 
         # return tf.Session().run(training_accuracy)

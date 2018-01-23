@@ -27,7 +27,7 @@ class DataLoader:
         except ValueError:
             return False
 
-    def load_params(self, labels, file_content, key_label):
+    def load_params(self, labels, file_content):
         """
         EFFECTS: takes file content and loads the parameters from it
                  creates a dictionary with categories of data mapped to classes
@@ -35,11 +35,12 @@ class DataLoader:
                  
                  data map is stored in "self.data_map" with key equal to "key_label"
         """
-        class_map = {}
+        class_map = self.data_map
         params = []
 
         for label in labels:
-            class_map[label] = {}
+            if not(label in class_map):
+                class_map[label] = {}
         
         for row in file_content:
             param_list = []
@@ -63,31 +64,38 @@ class DataLoader:
                     except ValueError:
                         map_for_label.update({val: 1})
 
-                # get class for value
+                # get class for value and add param to list
                 param_list.append(class_map[labels[i]][val])
 
             params.append(param_list)
 
-        self.data_map.update({key_label: class_map})
+        # self.data_map.update(class_map)
 
         return params
 
-    def load_data(self, file_name, training_example_range=(0, 100)):
+    def load_country_data(self, user_params, user_labels):
         """
-        EFFECTS: loads the parameters X and target Y into two vectors
-                 from the file specified in "file_name"
-                 also returns the number of classifications tuple returned is in
-                 form (X, Y, classificaiton_count)
+        EFFECTS: returns a matrix of statistics for each country in the labels
+        """
 
-                 start_from: the line to start reading data from
-                 training_example_count: amount of training examples to read
+        with open(self.cur_path + "/data/countries.csv") as csvfile:
+            file_contents = list(csvfile)
+            labels = file_contents[0]
+            # print(labels)
+            # for row in file_contents:
+            # params = self.load_params(labels, file_contents, "countries.csv")
+            print(self.data_map)
+
+    def load_user_data(self, file_name=False, training_example_range=(0, 100)):
+        """
+        EFFECTS:
         """
 
         X = []
         Y = []
-        
+
         with open(self.cur_path + "/" + file_name, 'r') as csvfile:
-            reader = csv.reader(csvfile,  quotechar='|')
+            reader = csv.reader(csvfile, quotechar='|')
             # -2 so we don't count the labels
             i = -2
 
@@ -97,33 +105,44 @@ class DataLoader:
             labels = file_contents[0]
 
             # strip out first 4 columns
-            file_contents = [row[4:] for row in file_contents[(training_example_range[0]+1):training_example_range[1]+1]]
+            file_contents = [row[4:] for row in
+                             file_contents[(training_example_range[0] + 1):training_example_range[1] + 1]]
+
             labels = labels[4:]
 
-            
-
-            params = self.load_params(labels, file_contents, file_name)
+            params = self.load_params(labels, file_contents)
 
             for row in params:
                 X.append(row[:-1])
                 Y.append(row[-1])
-        
 
         X = np.array(X)
         X = X.astype(float)
 
         # print(X)
 
-        
         Y = np.array(Y)
         Y = np.reshape(Y, (Y.shape[0], 1))
         Y = Y.astype(np.float64)
 
         # the number of classes we have
         classification_count = np.max(Y)
-        
+
         one_hot_matrix = tf.one_hot(tf.cast(Y, tf.int32), classification_count)
 
         one_hot_matrix = tf.reshape(one_hot_matrix, (tf.shape(Y)[0], classification_count))
 
-        return (X, tf.Session().run(one_hot_matrix), classification_count)
+        return X, tf.Session().run(one_hot_matrix), classification_count
+
+    def load_data(self, file_name=False, training_example_range=(0, 100)):
+        """
+        EFFECTS: loads the parameters X and target Y into two vectors
+                 from the file specified in "file_name"
+                 also returns the number of classifications tuple returned is in
+                 form (X, Y, classificaiton_count)
+        """
+        user_params, user_labels, classification_count = self.load_user_data(file_name, training_example_range)
+
+        self.load_country_data(user_params, user_labels)
+
+        return user_params, user_labels, classification_count
