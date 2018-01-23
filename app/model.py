@@ -12,11 +12,11 @@ class Model:
         
         self.x_train = tf.Session().run(tf.nn.l2_normalize(self.x_train, 0))
 
-        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (10000,11000))
+        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (10000, 11000))
         
         self.parameters = {
             "W": tf.get_variable("W", shape=[self.classification_count, self.x_train.shape[1]], initializer=tf.contrib.layers.xavier_initializer(dtype=tf.float64)), 
-            "b": tf.Variable(tf.zeros((1, 1)))
+            "b": tf.Variable(tf.ones((1, 1)))
         }
 
         self.cost_function = self.get_cost()
@@ -31,7 +31,7 @@ class Model:
         with tf.Session() as sess:
             sess.run(self.init)
             for i in range(0, num_iterations):
-                [c,w,_] = sess.run([self.cost_function, self.parameters["W"], self.optimizer], feed_dict={"X:0": self.x_train, "Y:0": self.y_train})
+                [c,w,_,_] = sess.run([self.cost_function, self.parameters["W"], self.parameters["b"], self.optimizer], feed_dict={"X:0": self.x_train, "Y:0": self.y_train})
                 if i % 1000 == 0:
                     print("Cost after " + str(i) + " iterations: " + str(c))
             
@@ -44,6 +44,7 @@ class Model:
     def get_cost(self):        
         placeholder_y = tf.placeholder(dtype=tf.float32, shape=self.y_train.shape, name="Y")
         return tf.losses.softmax_cross_entropy(onehot_labels=placeholder_y, logits=self.get_activation())
+        # return tf.losses.sigmoid_cross_entropy(multi_class_labels=placeholder_y, logits=self.get_activation())
 
     def get_activation(self):
         placeholder_x = tf.placeholder(dtype=tf.float32, shape=self.x_train.shape, name="X")
@@ -57,12 +58,18 @@ class Model:
         EFFECTS: uses argmax to return the index corresponding to the country
                  the model predicts
         """
-        p_x = tf.matmul(X, tf.transpose(W))
+        p_x = tf.matmul(X, tf.transpose(W)) + self.parameters["b"]
 
         predictions = tf.argmax(p_x, 1)
 
-        return tf.cast(tf.one_hot(predictions, self.classification_count), tf.float64)
 
+        return tf.Session().run(predictions)
+
+        # return tf.cast(tf.one_hot(predictions, self.classification_count), tf.float64)
+        
+        # print(tf.Session().run(p_x))
+
+        # return tf.argmax(p_x, 1)
 
     def get_accuracy(self, distribution="test"):
         """
@@ -70,7 +77,7 @@ class Model:
                 returns the correct predictions over the total number of predictions
         """
 
-        W = tf.cast(self.get_weights(tf.Session()), dtype=tf.float64)
+        [W, b] = tf.cast(self.get_weights(tf.Session()), dtype=tf.float64)
 
         # print(tf.Session().run(W))
 
@@ -87,13 +94,31 @@ class Model:
         X = tf.cast(X, dtype=tf.float64)
         predictions = self.predict(W, X)
 
-        comparison = tf.equal(tf.argmax(predictions, 1), tf.Session().run(tf.argmax(Y, 1)))
+        # predictions = tf.argmax(predictions, 1)
+        Y = tf.argmax(Y, 1)
 
-        total_predictions = tf.size(predictions, out_type=tf.float64)
+        # print(predictions)
+
+        acc = tf.metrics.accuracy(Y, predictions)
+
+        with tf.Session() as sess:
+            sess.run(tf.local_variables_initializer())
+            return sess.run(acc)[0]
+
+ 
+        # print(Y)
+
+        # with tf.Session() as sess:
+        #     sess.run(tf.local_variables_initializer())
+        #     return sess.run(tf.metrics.accuracy(tf.argmax(Y, 1), tf.argmax(predictions, 1)))
+
+        # comparison = tf.equal(tf.argmax(predictions, 1), tf.Session().run(tf.argmax(Y, 1)))
+
+        # total_predictions = tf.size(predictions, out_type=tf.float64)
         
-        correct_predictions = tf.reduce_sum(tf.cast(comparison, dtype=tf.float64))
+        # correct_predictions = tf.reduce_sum(tf.cast(comparison, dtype=tf.float64))
 
-        training_accuracy = tf.divide(correct_predictions, total_predictions)
+        # training_accuracy = tf.divide(correct_predictions, total_predictions)
 
 
-        return tf.Session().run(training_accuracy)
+        # return tf.Session().run(training_accuracy)

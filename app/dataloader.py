@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 import os
 
-# manages loading the data into vectors X and Y
+# manages loading the data into vectors X and Y 
 class DataLoader:
     def __init__(self, cur_path=os.path.dirname(__file__)):
         self.cur_path = cur_path
@@ -16,7 +16,7 @@ class DataLoader:
     def load_weights(self, sess):
         saver = tf.train.Saver()
         saver.restore(sess, self.cur_path + "/data/my_model")
-        return sess.run('W:0')
+        return sess.run(['W:0', 'b:0'])
     
     def try_parse(self, num):
         """
@@ -112,7 +112,7 @@ class DataLoader:
         X = np.array(X)
         X = X.astype(float)
 
-        print(X)
+        # print(X)
 
         
         Y = np.array(Y)

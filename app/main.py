@@ -6,9 +6,11 @@ import os
 
 Model = model.Model()
 
-Model.train(50000)
+Model.train(10000)
 
 # Model.load_data()
 
-# print("Training accuracy: %.2f" % Model.get_accuracy("train"))
-# print("Testing accuracy: %.2f" % Model.get_accuracy("test"))
+# Model.get_accuracy("train")
+
+print("Training accuracy: %.2f" % Model.get_accuracy("train"))
+print("Testing accuracy: %.2f" % Model.get_accuracy("test"))
