@@ -8,14 +8,22 @@ import dataloader
 class Model:
     def __init__(self):        
         self.DataLoader = dataloader.DataLoader()
-        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.load_data("data/train_users_2.csv", (0,100000))
+        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.load_data("data/train_users_2.csv", (0,10000))
         
+        
+        # self.x_train = [[param ** i for i, param in enumerate(row)] for row in self.x_train]
+            
+        
+        # self.x_train = np.array([param in enumerate(self.x_train)])
+
         self.x_train = tf.Session().run(tf.nn.l2_normalize(self.x_train, 0))
 
-        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (100000, 101000))
+        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (10000, 11000))
         
         self.parameters = {
-            "W": tf.get_variable("W", shape=[self.classification_count, self.x_train.shape[1]], initializer=tf.contrib.layers.xavier_initializer(dtype=tf.float64), dtype=tf.float64), 
+            "W": tf.get_variable("W", shape=[self.classification_count, self.x_train.shape[1]], 
+            initializer=tf.contrib.layers.xavier_initializer(dtype=tf.float64), 
+            dtype=tf.float64, regularizer=self.get_regularizer()), 
             "b": tf.ones((1, 1), dtype=tf.float64)
         }
 
@@ -41,6 +49,9 @@ class Model:
     def get_weights(self, sess):
         return self.DataLoader.load_weights(sess)
 
+    def get_regularizer(self):
+        return tf.contrib.layers.l2_regularizer(0.8)
+
     def get_cost(self):        
         placeholder_y = tf.placeholder(dtype=tf.float64, shape=self.y_train.shape, name="Y")
         return tf.losses.softmax_cross_entropy(onehot_labels=placeholder_y, logits=self.get_activation())
@@ -52,7 +63,7 @@ class Model:
         return tf.add(tf.matmul(placeholder_x, tf.transpose(self.parameters["W"])), self.parameters["b"])
 
     def get_optimizer(self):
-        return tf.train.AdamOptimizer(0.01).minimize(self.cost_function)
+        return tf.train.AdamOptimizer(.3).minimize(self.cost_function)
 
     def predict(self, W, X):
         """
