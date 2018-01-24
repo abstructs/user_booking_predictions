@@ -9,7 +9,7 @@ import dataloader
 class Model:
     def __init__(self):
         self.DataLoader = dataloader.DataLoader()
-        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.load_data("data/train_users_2.csv", (0, 10000))
+        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.get_data("data/train_users_2.csv", (0, 30000))
 
         # self.DataLoader.load_data("data/countries.csv")
         # self.x_train = [[param ** i for i, param in enumerate(row)] for row in self.x_train]
@@ -18,7 +18,7 @@ class Model:
 
         self.x_train = tf.Session().run(tf.nn.l2_normalize(self.x_train, 0))
 
-        [self.x_test, self.y_test, _] = self.DataLoader.load_data("data/train_users_2.csv", (10000, 20000))
+        [self.x_test, self.y_test, _] = self.DataLoader.get_data("data/train_users_2.csv", (30000, 60000))
 
         self.parameters = {
             "W": tf.get_variable("W", shape=[self.classification_count, self.x_train.shape[1]],
@@ -47,7 +47,7 @@ class Model:
             self.DataLoader.save_weights(sess)
 
     def get_weights(self, sess):
-        return self.DataLoader.load_weights(sess)
+        return self.DataLoader.get_weights(sess)
 
     def get_regularizer(self):
         return tf.contrib.layers.l2_regularizer(0.8)

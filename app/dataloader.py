@@ -14,7 +14,7 @@ class DataLoader:
         saver = tf.train.Saver()
         saver.save(sess, self.cur_path + "/data/my_model")
 
-    def load_weights(self, sess):
+    def get_weights(self, sess):
         saver = tf.train.Saver()
         saver.restore(sess, self.cur_path + "/data/my_model")
         return sess.run('W:0')
@@ -28,7 +28,7 @@ class DataLoader:
         except ValueError:
             return False
 
-    def load_params(self, labels, file_content):
+    def get_params(self, labels, file_content):
         """
         EFFECTS: takes file content and loads the parameters from it
                  creates a dictionary with categories of data mapped to classes
@@ -70,11 +70,27 @@ class DataLoader:
 
             params.append(param_list)
 
-        # self.data_map.update(class_map)
-
         return params
 
-    def load_country_data(self, user_params, user_labels):
+    def get_country_params(self, country_data, user_labels):
+        """
+        :param country_data: The file contents from the country.csv file
+        :param user_labels: the target labels for each user
+        EFFECTS: returns a matrix of parameters for each user corresponding to the target country
+        """
+        country_params = np.zeros((user_labels.shape[0], country_data.shape[1]))
+
+        # find the country statistics that match the user's destination country
+        for i, params in enumerate(country_params):
+            new_param = np.array(list(filter(lambda row: int(user_labels[i][0]) == int(row[0]), country_data)))
+            if len(new_param) == 0:
+                continue
+
+            country_params[i, :] = new_param
+        return country_params
+
+
+    def get_country_data(self, user_params, user_labels):
         """
         EFFECTS: returns a matrix of statistics for each country in the labels
         """
@@ -85,13 +101,13 @@ class DataLoader:
             file_contents = list(reader)
             labels = file_contents[0]
 
-            params = self.load_params(labels, file_contents[1:])
+            params = self.get_params(labels, file_contents[1:])
 
             return params
 
-    def load_user_data(self, file_name=False, training_example_range=(0, 100)):
+    def get_user_data(self, file_name=False, training_example_range=(0, 100)):
         """
-        EFFECTS:
+        EFFECTS: returns a matrix of parameters for users
         """
 
         X = []
@@ -113,7 +129,7 @@ class DataLoader:
 
             labels = labels[4:]
 
-            params = self.load_params(labels, file_contents)
+            params = self.get_params(labels, file_contents)
 
             for row in params:
                 X.append(row[:-1])
@@ -122,44 +138,28 @@ class DataLoader:
         X = np.array(X)
         X = X.astype(float)
 
-        # print(X)
-
         Y = np.array(Y)
         Y = np.reshape(Y, (Y.shape[0], 1))
         Y = Y.astype(np.float64)
 
         # the number of classes we have
         classification_count = np.max(Y)
-        #
-        # one_hot_matrix = tf.one_hot(tf.cast(Y, tf.int32), classification_count)
-        #
-        # one_hot_matrix = tf.reshape(one_hot_matrix, (tf.shape(Y)[0], classification_count))
 
         return X, Y, classification_count
 
-    def load_data(self, file_name=False, training_example_range=(0, 100)):
+    def get_data(self, file_name=False, training_example_range=(0, 100)):
         """
         EFFECTS: loads the parameters X and target Y into two vectors
                  from the file specified in "file_name"
                  also returns the number of classifications tuple returned is in
                  form (X, Y, classificaiton_count)
         """
-        user_params, user_labels, classification_count = self.load_user_data(file_name, training_example_range)
+        user_params, user_labels, classification_count = self.get_user_data(file_name, training_example_range)
 
-        country_data = self.load_country_data(user_params, user_labels)
+        # get data in a numpy array
+        country_data = np.array([np.array(row) for row in self.get_country_data(user_params, user_labels)])
 
-        # convert all arrays to numpy arrays
-        country_data = np.array([np.array(row) for row in country_data])
-
-        country_params = np.zeros((user_params.shape[0], country_data.shape[1]))
-
-        # find the country statistics that match the user's destination country
-        for i, params in enumerate(country_params):
-            new_param = np.array(list(filter(lambda row: int(user_labels[i][0]) == int(row[0]), country_data)))
-            if len(new_param) == 0:
-                continue
-
-            country_params[i, :] = new_param
+        country_params = self.get_country_params(country_data, user_labels)
 
         params = np.append(user_params, country_params, 1)
 
