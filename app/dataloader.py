@@ -3,7 +3,8 @@ import numpy as np
 import tensorflow as tf
 import os
 
-# manages loading the data into vectors X and Y 
+
+# manages loading the data into vectors X and Y
 class DataLoader:
     def __init__(self, cur_path=os.path.dirname(__file__)):
         self.cur_path = cur_path
@@ -17,7 +18,7 @@ class DataLoader:
         saver = tf.train.Saver()
         saver.restore(sess, self.cur_path + "/data/my_model")
         return sess.run('W:0')
-    
+
     def try_parse(self, num):
         """
         EFFECTS: tries to parse num to a float, returns false if not possible
@@ -39,9 +40,9 @@ class DataLoader:
         params = []
 
         for label in labels:
-            if not(label in class_map):
+            if not (label in class_map):
                 class_map[label] = {}
-        
+
         for row in file_content:
             param_list = []
             for i, val in enumerate(row):
@@ -57,7 +58,7 @@ class DataLoader:
 
                 # gets dict for label with the entry
                 map_for_label = class_map[labels[i]]
-                
+
                 if type(val) is str and not (val in map_for_label):
                     try:
                         map_for_label.update({val: max(map_for_label.values()) + 1})
@@ -78,13 +79,15 @@ class DataLoader:
         EFFECTS: returns a matrix of statistics for each country in the labels
         """
 
-        with open(self.cur_path + "/data/countries.csv") as csvfile:
-            file_contents = list(csvfile)
+        with open(self.cur_path + "/data/countries.csv", "r") as csvfile:
+            reader = csv.reader(csvfile, quotechar='|')
+
+            file_contents = list(reader)
             labels = file_contents[0]
-            # print(labels)
-            # for row in file_contents:
-            # params = self.load_params(labels, file_contents, "countries.csv")
-            print(self.data_map)
+
+            params = self.load_params(labels, file_contents[1:])
+
+            return params
 
     def load_user_data(self, file_name=False, training_example_range=(0, 100)):
         """
@@ -127,12 +130,12 @@ class DataLoader:
 
         # the number of classes we have
         classification_count = np.max(Y)
+        #
+        # one_hot_matrix = tf.one_hot(tf.cast(Y, tf.int32), classification_count)
+        #
+        # one_hot_matrix = tf.reshape(one_hot_matrix, (tf.shape(Y)[0], classification_count))
 
-        one_hot_matrix = tf.one_hot(tf.cast(Y, tf.int32), classification_count)
-
-        one_hot_matrix = tf.reshape(one_hot_matrix, (tf.shape(Y)[0], classification_count))
-
-        return X, tf.Session().run(one_hot_matrix), classification_count
+        return X, Y, classification_count
 
     def load_data(self, file_name=False, training_example_range=(0, 100)):
         """
@@ -143,6 +146,25 @@ class DataLoader:
         """
         user_params, user_labels, classification_count = self.load_user_data(file_name, training_example_range)
 
-        self.load_country_data(user_params, user_labels)
+        country_data = self.load_country_data(user_params, user_labels)
 
-        return user_params, user_labels, classification_count
+        # convert all arrays to numpy arrays
+        country_data = np.array([np.array(row) for row in country_data])
+
+        country_params = np.zeros((user_params.shape[0], country_data.shape[1]))
+
+        # find the country statistics that match the user's destination country
+        for i, params in enumerate(country_params):
+            new_param = np.array(list(filter(lambda row: int(user_labels[i][0]) == int(row[0]), country_data)))
+            if len(new_param) == 0:
+                continue
+
+            country_params[i, :] = new_param
+
+        params = np.append(user_params, country_params, 1)
+
+        one_hot_matrix = tf.one_hot(tf.cast(user_labels, tf.int32), classification_count)
+
+        one_hot_matrix = tf.reshape(one_hot_matrix, (tf.shape(user_labels)[0], classification_count))
+
+        return params, tf.Session().run(one_hot_matrix), classification_count
