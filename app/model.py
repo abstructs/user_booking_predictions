@@ -65,11 +65,13 @@ class Model:
     def get_optimizer(self):
         return tf.train.AdamOptimizer(.3).minimize(self.cost_function)
 
-    def predict(self, W, X):
+    def predict(self, X):
         """
         EFFECTS: uses argmax to return the index corresponding to the country
                  the model predicts
         """
+
+        W = tf.cast(self.get_weights(tf.Session()), dtype=tf.float64)
 
         p_x = tf.matmul(X, tf.transpose(W)) + self.parameters["b"]
 
@@ -89,8 +91,6 @@ class Model:
                 returns the correct predictions over the total number of predictions
         """
 
-        W = tf.cast(self.get_weights(tf.Session()), dtype=tf.float64)
-
         if distribution == "test":
             Y = self.y_test
             X = self.x_test
@@ -102,7 +102,7 @@ class Model:
 
         Y = tf.cast(Y, dtype=tf.float64)
         X = tf.cast(X, dtype=tf.float64)
-        predictions = self.predict(W, X)
+        predictions = self.predict(X)
 
         # predictions = tf.argmax(predictions, 1)
         Y = tf.argmax(Y, 1)
@@ -115,21 +115,3 @@ class Model:
             equals = sess.run(tf.equal(Y, predictions))
             set_size = sess.run(tf.size(Y))
             return np.count_nonzero(equals) / set_size
-
-            # return sess.run(acc)[0]
-
-        # print(Y)
-
-        # with tf.Session() as sess:
-        #     sess.run(tf.local_variables_initializer())
-        #     return sess.run(tf.metrics.accuracy(tf.argmax(Y, 1), tf.argmax(predictions, 1)))
-
-        # comparison = tf.equal(tf.argmax(predictions, 1), tf.Session().run(tf.argmax(Y, 1)))
-
-        # total_predictions = tf.size(predictions, out_type=tf.float64)
-
-        # correct_predictions = tf.reduce_sum(tf.cast(comparison, dtype=tf.float64))
-
-        # training_accuracy = tf.divide(correct_predictions, total_predictions)
-
-        # return tf.Session().run(training_accuracy)

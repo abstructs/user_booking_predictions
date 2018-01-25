@@ -147,6 +147,60 @@ class DataLoader:
 
         return X, Y, classification_count
 
+    def get_age_bucket_data(self):
+        """
+        EFFECTS: Gets data from the age/gender file
+        """
+
+        with open(self.cur_path + "/data/age_gender_bkts.csv", 'r') as csvfile:
+            reader = csv.reader(csvfile, quotechar='|')
+            file_contents = list(reader)
+            # labels = file_contents[0]
+
+            return file_contents
+
+    def get_age_bucket_params(self, user_params, user_labels):
+        age_bucket_data = self.get_age_bucket_data()
+
+        data = []
+        labels = age_bucket_data[0]
+        bucket_params = np.zeros((user_params.shape[0], len(age_bucket_data[0]) - 2))
+
+        for row in age_bucket_data[1:]:
+            age_range = tuple([int(num) for num in row[labels.index("age_bucket")].strip('+').split('-')])
+            country = self.data_map['country_destination'][row[labels.index("country_destination")]]
+            gender = self.data_map['gender'][row[labels.index("gender")].upper()]
+            pop_in_thousands = float(row[labels.index("population_in_thousands")])
+            data.append([age_range] + [country] + [gender] + [pop_in_thousands])
+
+        def is_in_bucket(age_range, user_vector):
+            user_age = user_vector[1]
+            if len(age_range) == 1:
+                return user_age >= age_range[0]
+            return age_range[0] <= user_age <= age_range[1]
+
+        # get the params out of our data that correspond with the user's information
+        for i, row in enumerate(user_params):
+            user_target = int(user_labels[i][0])
+
+            params_for_country = list(filter(lambda row: row[1] == user_target, data))
+
+            curr_user = user_params[i]
+
+            bucket_for_gender = list(filter(lambda row: is_in_bucket(row[labels.index("age_bucket")], curr_user), params_for_country))
+
+            user_gender = curr_user[0]
+
+            new_params = list(filter(lambda row: row[labels.index("gender")] == user_gender, bucket_for_gender))
+
+            if len(new_params) == 0:
+                continue
+
+            bucket_params[i] = new_params[0][1:]
+
+        return bucket_params
+
+
     def get_data(self, file_name=False, training_example_range=(0, 100)):
         """
         EFFECTS: loads the parameters X and target Y into two vectors
@@ -161,7 +215,12 @@ class DataLoader:
 
         country_params = self.get_country_params(country_data, user_labels)
 
-        params = np.append(user_params, country_params, 1)
+        # age_bucket_data = self.get_age_bucket_data()
+        age_bucket_params = self.get_age_bucket_params(user_params, user_labels)
+
+        # print(age_bucket_params[50:100])
+
+        params = np.append(np.append(user_params, country_params, 1), age_bucket_params, 1)
 
         one_hot_matrix = tf.one_hot(tf.cast(user_labels, tf.int32), classification_count)
 
