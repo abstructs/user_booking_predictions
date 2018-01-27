@@ -1,6 +1,5 @@
 import numpy as np
 import tensorflow as tf
-import os
 import dataloader
 
 
@@ -9,7 +8,7 @@ import dataloader
 class Model:
     def __init__(self):
         self.DataLoader = dataloader.DataLoader()
-        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.get_data("data/train_users_2.csv", (0, 30000))
+        [self.x_train, self.y_train, self.classification_count] = self.DataLoader.get_data("data/train_users_2.csv", (0, 100000))
 
         # self.DataLoader.load_data("data/countries.csv")
         # self.x_train = [[param ** i for i, param in enumerate(row)] for row in self.x_train]
@@ -18,7 +17,10 @@ class Model:
 
         self.x_train = tf.Session().run(tf.nn.l2_normalize(self.x_train, 0))
 
-        [self.x_test, self.y_test, _] = self.DataLoader.get_data("data/train_users_2.csv", (30000, 60000))
+        self.x_test = self.DataLoader.get_data("data/test_users.csv", (0, 100000), True)
+        # print(self.x_test.shape)
+
+        # self.x_test = [row + self.y_test[i] for i,row in enumerate(self.x_test)]
 
         self.parameters = {
             "W": tf.get_variable("W", shape=[self.classification_count, self.x_train.shape[1]],
@@ -54,8 +56,8 @@ class Model:
 
     def get_cost(self):
         placeholder_y = tf.placeholder(dtype=tf.float64, shape=self.y_train.shape, name="Y")
-        return tf.losses.softmax_cross_entropy(onehot_labels=placeholder_y, logits=self.get_activation())
-        # return tf.losses.sigmoid_cross_entropy(multi_class_labels=placeholder_y, logits=self.get_activation())
+        # return tf.losses.softmax_cross_entropy(onehot_labels=placeholder_y, logits=self.get_activation())
+        return tf.losses.sigmoid_cross_entropy(multi_class_labels=placeholder_y, logits=self.get_activation())
 
     def get_activation(self):
         placeholder_x = tf.placeholder(dtype=tf.float64, shape=self.x_train.shape, name="X")
@@ -79,11 +81,28 @@ class Model:
 
         return tf.Session().run(predictions)
 
-        # return tf.cast(tf.one_hot(predictions, self.classification_count), tf.float64)
+    def output_data(self):
+        """
+        EFFECTS: outputs a csv with the user ids and predictions
+        :return:
+        """
+        predictions = self.predict(self.x_test)
+        str = "id,country\n"
+        for i, prediction in enumerate(predictions):
+            data_map = self.DataLoader.data_map['country_destination']
 
-        # print(tf.Session().run(p_x))
+            str += self.DataLoader.user_ids[i] + "," + list(data_map.keys())[list(data_map.values()).index(prediction)] \
+                   + "\n"
 
-        # return tf.argmax(p_x, 1)
+        with open("submission.csv", "w") as csvfile:
+            csvfile.write(str)
+
+        # print(str)
+            # print(prediction)
+            # print(list(data_map.keys())[list(data_map.values()).index(prediction)])
+        #     print(list(data_map.values()))
+            # for country, index in self.DataLoader.data_map['country_destination'].iteritems():
+            #     print(country)
 
     def get_accuracy(self, distribution="test"):
         """

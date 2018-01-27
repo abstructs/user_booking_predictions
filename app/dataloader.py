@@ -123,6 +123,9 @@ class DataLoader:
             file_contents = list(reader)
             labels = file_contents[0]
 
+            self.user_ids = [row[0] for row in
+                        file_contents[(training_example_range[0] + 1):training_example_range[1] + 1]]
+
             # strip out first 4 columns
             file_contents = [row[4:] for row in
                              file_contents[(training_example_range[0] + 1):training_example_range[1] + 1]]
@@ -200,8 +203,7 @@ class DataLoader:
 
         return bucket_params
 
-
-    def get_data(self, file_name=False, training_example_range=(0, 100)):
+    def get_data(self, file_name=False, training_example_range=(0, 100), no_labels=False):
         """
         EFFECTS: loads the parameters X and target Y into two vectors
                  from the file specified in "file_name"
@@ -218,9 +220,10 @@ class DataLoader:
         # age_bucket_data = self.get_age_bucket_data()
         age_bucket_params = self.get_age_bucket_params(user_params, user_labels)
 
-        # print(age_bucket_params[50:100])
-
         params = np.append(np.append(user_params, country_params, 1), age_bucket_params, 1)
+
+        if no_labels:
+            return np.array([np.append(row, user_labels[i]) for i, row in enumerate(params)])
 
         one_hot_matrix = tf.one_hot(tf.cast(user_labels, tf.int32), classification_count)
 
