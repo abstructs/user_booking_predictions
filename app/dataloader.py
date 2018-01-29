@@ -2,13 +2,19 @@ import csv
 import numpy as np
 import tensorflow as tf
 import os
+import json
 
 
 # manages loading the data into vectors X and Y
 class DataLoader:
     def __init__(self, cur_path=os.path.dirname(__file__)):
         self.cur_path = cur_path
-        self.data_map = {}
+
+        try:
+            f = open(self.cur_path + '/data_map.json')
+            self.data_map = json.load(f)
+        except json.decoder.JSONDecodeError:
+            self.data_map = {}
 
     def save_weights(self, sess):
         saver = tf.train.Saver()
@@ -148,7 +154,7 @@ class DataLoader:
         # the number of classes we have
         classification_count = np.max(Y)
 
-        return X, Y, classification_count
+        return X, Y, 12
 
     def get_age_bucket_data(self):
         """
@@ -225,8 +231,13 @@ class DataLoader:
         if no_labels:
             return np.array([np.append(row, user_labels[i]) for i, row in enumerate(params)])
 
+        # return params, tf.Session().run(tf.cast(user_labels, tf.float64)), classification_count
+
         one_hot_matrix = tf.one_hot(tf.cast(user_labels, tf.int32), classification_count)
 
-        one_hot_matrix = tf.reshape(one_hot_matrix, (tf.shape(user_labels)[0], classification_count))
+        # one_hot_matrix = tf.reshape(one_hot_matrix, (tf.shape(user_labels)[0], classification_count))
+
+        with open(self.cur_path + '/data_map.json', 'w') as f:
+            json.dump(self.data_map, f)
 
         return params, tf.Session().run(one_hot_matrix), classification_count

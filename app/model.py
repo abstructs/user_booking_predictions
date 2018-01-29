@@ -10,6 +10,10 @@ class Model:
         self.DataLoader = dataloader.DataLoader()
         [self.x_train, self.y_train, self.classification_count] = self.DataLoader.get_data("data/train_users_2.csv", (0, 100000))
 
+        # self.y_train = np.reshape(np.array([row[0] for row in tf.Session().run(self.y_train)]), (self.x_train.shape[0], 1))
+
+        # print(self.y_train)
+        # return
         # self.DataLoader.load_data("data/countries.csv")
         # self.x_train = [[param ** i for i, param in enumerate(row)] for row in self.x_train]
 
@@ -29,17 +33,26 @@ class Model:
             "b": tf.ones((1, 1), dtype=tf.float64)
         }
 
+        self.activation = self.get_activation()
         self.cost_function = self.get_cost()
         self.optimizer = self.get_optimizer()
 
-        self.init = tf.global_variables_initializer()
 
     def train(self, num_iterations=100):
         """
         EFFECTS: minimizes the cost function and saves the weights
         """
+
+
         with tf.Session() as sess:
-            sess.run(self.init)
+            init = tf.global_variables_initializer()
+            sess.run(init)
+
+            # print(sess.run(self.cost_function, feed_dict={"X:0": self.x_train, "Y:0": self.y_train}))
+
+            # a = sess.run(self.cost_function, feed_dict={"X:0": self.x_train, "Y:0": self.y_train})
+
+            # print(a)
             for i in range(0, num_iterations):
                 [c, w, _] = sess.run([self.cost_function, self.parameters["W"], self.optimizer],
                                      feed_dict={"X:0": self.x_train, "Y:0": self.y_train})
@@ -52,15 +65,23 @@ class Model:
         return self.DataLoader.get_weights(sess)
 
     def get_regularizer(self):
-        return tf.contrib.layers.l2_regularizer(0.8)
+        return tf.contrib.layers.l2_regularizer(.8)
 
     def get_cost(self):
-        placeholder_y = tf.placeholder(dtype=tf.float64, shape=self.y_train.shape, name="Y")
-        # return tf.losses.softmax_cross_entropy(onehot_labels=placeholder_y, logits=self.get_activation())
-        return tf.losses.sigmoid_cross_entropy(multi_class_labels=placeholder_y, logits=self.get_activation())
+        y = tf.placeholder(dtype=tf.float64, shape=self.y_train.shape, name="Y")
+
+        return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y_train, logits=self.activation))
+
+        # return self.activation
+        # return tf.losses.softmax_cross_entropy(onehot_labels=self.y_train, logits=self.x_train, weights=self.parameters["W"])
+        # return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=placeholder_y, logits=self.get_activation()))
+        # return tf.contrib.losses.sigmoid_cross_entropy_with_logits(multi_class_labels=placeholder_y, logits=self.get_activation())
+        # return tf.nn.sigmoid_cross_entropy_with_logits(labels=placeholder_y, logits=self.get_activation())
 
     def get_activation(self):
         placeholder_x = tf.placeholder(dtype=tf.float64, shape=self.x_train.shape, name="X")
+
+        # return tf.add(tf.matmul(placeholder_x, tf.transpose(self.parameters["W"])), self.parameters["b"])
 
         return tf.add(tf.matmul(placeholder_x, tf.transpose(self.parameters["W"])), self.parameters["b"])
 
@@ -77,9 +98,15 @@ class Model:
 
         p_x = tf.matmul(X, tf.transpose(W)) + self.parameters["b"]
 
-        predictions = tf.argmax(p_x, 1)
+        return tf.Session().run(tf.argmax(p_x, 1))
 
-        return tf.Session().run(predictions)
+        # predictions = tf.argmax(p_x, 1)
+
+        # print(tf.Session().run(predictions))
+
+        # print([prediction for prediction in tf.Session().run(p_x)])
+
+        # return p_x
 
     def output_data(self):
         """
@@ -88,11 +115,11 @@ class Model:
         """
         predictions = self.predict(self.x_test)
         str = "id,country\n"
+        # print(predictions)
         for i, prediction in enumerate(predictions):
             data_map = self.DataLoader.data_map['country_destination']
 
-            str += self.DataLoader.user_ids[i] + "," + list(data_map.keys())[list(data_map.values()).index(prediction)] \
-                   + "\n"
+            str += self.DataLoader.user_ids[i] + "," + list(data_map.keys())[list(data_map.values()).index(prediction)] + '\n'
 
         with open("submission.csv", "w") as csvfile:
             csvfile.write(str)
@@ -119,18 +146,19 @@ class Model:
         else:
             raise ValueError('Distribution should be set to "test" or "train"')
 
+        # print(self.DataLoader.data_map)
         Y = tf.cast(Y, dtype=tf.float64)
         X = tf.cast(X, dtype=tf.float64)
         predictions = self.predict(X)
 
         # predictions = tf.argmax(predictions, 1)
-        Y = tf.argmax(Y, 1)
+
+        Y = tf.argmax(Y, -1)
 
         with tf.Session() as sess:
             Y = sess.run(Y)
-            acc = tf.metrics.accuracy(Y, predictions)
-            sess.run(tf.local_variables_initializer())
-            # print(sess.run(Y.size))
-            equals = sess.run(tf.equal(Y, predictions))
-            set_size = sess.run(tf.size(Y))
-            return np.count_nonzero(equals) / set_size
+
+            equal = tf.equal(Y, predictions)
+            acc = tf.reduce_mean(tf.cast(equal, tf.float32))
+
+            return sess.run(acc)

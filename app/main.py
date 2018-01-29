@@ -28,9 +28,14 @@ Model.train(10000)
 # Model.get_accuracy("train")
 # Model.get_accuracy("train")
 
-print("Training accuracy: %.2f" % Model.get_accuracy("train"))
+# Model.get_accuracy("train")
+
+# print("Training accuracy: %.2f" % Model.get_accuracy("train"))
+
 # print("Testing accuracy: %.2f" % Model.get_accuracy("test"))
 
 Model.output_data()
+
+
 
 #  print(Model.predict(Model.x_test))
