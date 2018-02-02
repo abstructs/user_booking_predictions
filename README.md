@@ -1,5 +1,9 @@
 # User Bookings
 
+## IMPORTANT:
+We've started over in Jupyter Notebook. I'm trying to implement Gradient Boosting with xGBoost
+currently and will update the documentation when there's a new working model up.
+
 A prediction model for predicting where a user will book their first AirBnB location.
 
 ## Getting Started
